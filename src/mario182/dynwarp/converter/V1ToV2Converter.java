@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import mario182.dynwarp.Main;
 
 public class V1ToV2Converter implements FormatConverter{
 
