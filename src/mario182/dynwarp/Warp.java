@@ -8,6 +8,8 @@
 
 package mario182.dynwarp;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import org.bukkit.Location;
         
@@ -16,6 +18,7 @@ public class Warp {
     private String name;
     private String dynmapname;
     private String world;
+    private ArrayList<String> groups;
     private int x;
     private int y;
     private int z;
@@ -33,6 +36,7 @@ public class Warp {
         this.yaw = yaw;
         this.pitch = pitch;
         this.permission = permission;
+        this.groups = new ArrayList<>();
     }
 
     public String getName() {
@@ -73,6 +77,10 @@ public class Warp {
 
     public Location toLocation(){
         return new Location(Main.server.getWorld(world), x, y, z, yaw, pitch);
+    }
+    
+    public List<String> getGroups(){
+        return groups;
     }
 
     @Override

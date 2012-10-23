@@ -1,4 +1,4 @@
-/* 
+/*
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
  * and/or modify it under the terms of the Do What The Fuck You Want
@@ -15,6 +15,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.logging.Level;
 import org.bukkit.ChatColor;
@@ -36,16 +37,17 @@ import org.dynmap.markers.MarkerSet;
 
 public class Main extends JavaPlugin implements CommandExecutor{
 
-    public final static String VER = "0.1";
+    public final static String VER = "0.2";
     public final static char SEPERATOR = 'と';
-    public final static String FILEHEAD = "#DynWarp "+VER+" by mario182 - File format v1";
-    public final static String FORMAT = "#warpname"+SEPERATOR+"dynmapname"+SEPERATOR+"worldname"+SEPERATOR+"x-coord"+SEPERATOR+"y-coord"+SEPERATOR+"z-coord"+SEPERATOR+"yaw"+SEPERATOR+"pitch"+SEPERATOR+"permission";
+    public final static char GROUPSEPERATOR = '共';
+    public final static String FILEHEAD = "#DynWarp by mario182 - File format v2";
+    public final static String FORMAT = "#warpname"+SEPERATOR+"dynmapname"+SEPERATOR+"worldname"+SEPERATOR+"groups"+SEPERATOR+"x-coord"+SEPERATOR+"y-coord"+SEPERATOR+"z-coord"+SEPERATOR+"yaw"+SEPERATOR+"pitch"+SEPERATOR+"permission";
     public final static ArrayList<Warp> warps = new ArrayList<>(100);
     public static Server server;
     public static DynmapAPI d;
     public static File warpfile;
     private boolean load = true;
-    
+
     @Override
     public void onEnable() {
         server = getServer();
@@ -82,6 +84,7 @@ public class Main extends JavaPlugin implements CommandExecutor{
 
         initCommand("dynwarp", this);
         initCommand("warp", this);
+        initCommand("warpgroup", this);
         initCommand("createwarp", this);
         initCommand("deletewarp", this);
         initCommand("warplist", this);
@@ -99,9 +102,10 @@ public class Main extends JavaPlugin implements CommandExecutor{
         if (label.equals("dynwarp")){
             cs.sendMessage("DynWarp "+VER+" by mario182.");
             cs.sendMessage("/warp <target> - Warps to target.");
-            cs.sendMessage("/warplist - Lists all warps.");
+            cs.sendMessage("/warplist [groupname] - Lists all warps/warps of a group.");
             cs.sendMessage("/createwarp <target> [permission] - Creates warp \"target\". If a permission is given, it will be required to use this warp.");
             cs.sendMessage("/deletewarp <target> - Removes warp \"target\".");
+            cs.sendMessage("/warpgroup <target> <add/del> <groupname> - Adds/Removes \"target\" from \"groupname\".");
         }else if (label.equals("createwarp") || label.equals("addwarp")){
             if (cs.hasPermission("dynwarp.create")){
                 if (args.length==0 || args.length > 2){
@@ -157,6 +161,11 @@ public class Main extends JavaPlugin implements CommandExecutor{
             int total=0, allowed=0;
             while(i.hasNext()){
                 Warp w = i.next();
+                if (args.length==1){
+                    if (!w.getGroups().contains(args[0])){
+                        continue;
+                    }
+                }
                 if (w.getPermission()!=null && !w.getPermission().isEmpty()){
                     if (!cs.hasPermission(w.getPermission()) && !cs.hasPermission("dynwarp.ignorepermissions")){
                         sb.append(ChatColor.RED);
@@ -174,7 +183,7 @@ public class Main extends JavaPlugin implements CommandExecutor{
                 }
             }
             cs.sendMessage(sb.toString());
-            cs.sendMessage(total+" warp(s) total, of which you can access "+allowed+".");
+            cs.sendMessage(total+" warp(s) total"+(args.length==1?" in the \""+args[0]+"\" group":"")+", of which you can access "+allowed+".");
         }else if(label.equals("warp")){
             if (cs.hasPermission("dynwarp.warp")){
                 if (args.length==1){
@@ -209,6 +218,44 @@ public class Main extends JavaPlugin implements CommandExecutor{
                 }
             }else{
                 cs.sendMessage("No permission. Required permission \"dynwarp.warp\".");
+            }
+        }else if(label.equals("warpgroups") || label.equals("warpgroup") || label.equals("groupwarps")){
+            if (args.length==3){
+                if (warpNameExists(args[0])){
+                    if (args[1].equals("add")){
+                        if (cs.hasPermission("dynwarp.groups.add")){
+                            Warp w = getWarp(args[0]);
+                            if (!w.getGroups().contains(args[2])){
+                                w.getGroups().add(args[2]);
+                                cs.sendMessage("Group \""+args[2]+"\" added to warp \""+args[0]+"\".");
+                                save();
+                            }else{
+                                cs.sendMessage("Warp is already in this group.");
+                            }
+                        }else{
+                            cs.sendMessage("No permission. Required permission \"dynwarp.groups.add\".");
+                        }
+                    }else if(args[1].equals("del")){
+                        if (cs.hasPermission("dynwarp.groups.del")){
+                            Warp w = getWarp(args[0]);
+                            if (w.getGroups().contains(args[2])){
+                                w.getGroups().remove(args[2]);
+                                cs.sendMessage("Group \""+args[2]+"\" removed from warp \""+args[0]+"\".");
+                                save();
+                            }else{
+                                cs.sendMessage("Warp is not in this group.");
+                            }
+                        }else{
+                            cs.sendMessage("No permission. Required permission \"dynwarp.groups.del\".");
+                        }
+                    }else{
+                        cs.sendMessage("Usage: /"+label+" <warpname> <add/del> <groupname>");
+                    }
+                }else{
+                    cs.sendMessage("Warp name does not exist.");
+                }
+            }else{
+                cs.sendMessage("Usage: /"+label+" <warpname> <add/del> <groupname>");
             }
         }
         return true;
@@ -284,7 +331,16 @@ public class Main extends JavaPlugin implements CommandExecutor{
             Iterator<Warp> i = warps.iterator();
             while (i.hasNext()){
                 Warp w = i.next();
-                bw.write(w.getName()+SEPERATOR+w.getDynmapname()+SEPERATOR+w.getWorld()+SEPERATOR+w.getX()+SEPERATOR+w.getY()+SEPERATOR+w.getZ()+SEPERATOR+w.getYaw()+SEPERATOR+w.getPitch()+SEPERATOR+(w.getPermission()!=null?w.getPermission():""));
+                StringBuilder groups = new StringBuilder(w.getGroups().size()*24);
+                Iterator<String> i1 = w.getGroups().iterator();
+                while (i1.hasNext()){
+                    String s = i1.next();
+                    groups.append(s);
+                    if (i1.hasNext()){
+                        groups.append(GROUPSEPERATOR);
+                    }
+                }
+                bw.write(w.getName()+SEPERATOR+w.getDynmapname()+SEPERATOR+w.getWorld()+SEPERATOR+groups.toString()+SEPERATOR+w.getX()+SEPERATOR+w.getY()+SEPERATOR+w.getZ()+SEPERATOR+w.getYaw()+SEPERATOR+w.getPitch()+SEPERATOR+(w.getPermission()!=null?w.getPermission():""));
                 if (i.hasNext()){
                     bw.newLine();
                 }
@@ -308,10 +364,12 @@ public class Main extends JavaPlugin implements CommandExecutor{
                 String[] a = s.split(String.valueOf(SEPERATOR));
                 try{
                     String perm = null;
-                    if (a.length>=9){
-                        perm = a[8];
+                    if (a.length>=10){
+                        perm = a[9];
                     }
-                    Warp w = new Warp(a[0], a[1], a[2], Integer.parseInt(a[3]), Integer.parseInt(a[4]), Integer.parseInt(a[5]), Float.parseFloat(a[6]), Float.parseFloat(a[7]), perm);
+                    Warp w = new Warp(a[0], a[1], a[2], Integer.parseInt(a[4]), Integer.parseInt(a[5]), Integer.parseInt(a[6]), Float.parseFloat(a[7]), Float.parseFloat(a[8]), perm);
+                    String[] groups = a[3].split(String.valueOf(GROUPSEPERATOR));
+                    Collections.addAll(w.getGroups(), groups);
                     if (warpNameExists(w.getName())){
                         throw new Exception("Warp "+w.getName()+" already exists!");
                     }
@@ -325,5 +383,14 @@ public class Main extends JavaPlugin implements CommandExecutor{
         }catch(IOException e){
             getLogger().log(Level.SEVERE, "Failed to load warps.", e);
         }
+    }
+
+    public static Warp getWarp(String name) {
+        for (Warp w : warps){
+            if (w.getName().equals(name)){
+                return w;
+            }
+        }
+        return null;
     }
 }
