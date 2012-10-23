@@ -1,0 +1,26 @@
+name: DynWarp
+main: mario182.dynwarp.Main
+version: 0.1
+author: mario182
+website: http://mario182.no-ip.org
+commands:
+    dynwarp:
+      description: '-'
+      usage: '-'
+    warp:
+      description: '-'
+      usage: '-'
+      aliases: [warpto]
+    createwarp:
+      description: '-'
+      usage: '-'
+      aliases: [addwarp, createwarp]
+    deletewarp:
+      description: '-'
+      usage: '-'
+      aliases: [removewarp, delwarp]
+    warplist:
+      description: '-'
+      usage: '-'
+      aliases: [listwarps]
+depend: [dynmap]
