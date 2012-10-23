@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.logging.Level;
+import mario182.dynwarp.converter.FormatConverter;
+import mario182.dynwarp.converter.V1ToV2Converter;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Server;
@@ -43,10 +45,17 @@ public class Main extends JavaPlugin implements CommandExecutor{
     public final static String FILEHEAD = "#DynWarp by mario182 - File format v2";
     public final static String FORMAT = "#warpname"+SEPERATOR+"dynmapname"+SEPERATOR+"worldname"+SEPERATOR+"groups"+SEPERATOR+"x-coord"+SEPERATOR+"y-coord"+SEPERATOR+"z-coord"+SEPERATOR+"yaw"+SEPERATOR+"pitch"+SEPERATOR+"permission";
     public final static ArrayList<Warp> warps = new ArrayList<>(100);
+    public final static FormatConverter[] converters;
     public static Server server;
     public static DynmapAPI d;
     public static File warpfile;
     private boolean load = true;
+
+    static {
+        ArrayList<FormatConverter> c = new ArrayList<>(15);
+        c.add(new V1ToV2Converter());
+        converters = c.toArray(new FormatConverter[c.size()]);
+    }
 
     @Override
     public void onEnable() {
@@ -360,7 +369,21 @@ public class Main extends JavaPlugin implements CommandExecutor{
             LineNumberReader lr = new LineNumberReader(new FileReader(warpfile));
             String s;
             while ((s = lr.readLine()) != null){
-                if (s.startsWith("#")){ continue; }
+                if (s.startsWith("#")){
+                    for (FormatConverter c : converters){
+                        if (s.equals(c.getHeader())){
+                            getLogger().info("Converting warp file to "+c.getVersion()+"...");
+                            if (c.convert(getLogger(), warpfile)){
+                                lr.close();
+                                load();
+                                return;
+                            }else{
+                                getLogger().severe("Failed to convert warp file!");
+                            }
+                        }
+                    }
+                    continue;
+                }
                 String[] a = s.split(String.valueOf(SEPERATOR));
                 try{
                     String perm = null;
