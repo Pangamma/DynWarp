@@ -2,7 +2,6 @@ package mario182.dynwarp;
 
 import java.util.Objects;
 import org.bukkit.Location;
-import org.bukkit.World;
 
 public class Warp {
 
