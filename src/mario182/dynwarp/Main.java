@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.logging.Level;
 import mario182.dynwarp.converter.FormatConverter;
@@ -39,7 +40,7 @@ import org.dynmap.markers.MarkerSet;
 
 public class Main extends JavaPlugin implements CommandExecutor{
 
-    public final static String VER = "0.2";
+    public final static String VER = "0.3";
     public final static char SEPERATOR = 'と';
     public final static char GROUPSEPERATOR = '共';
     public final static String FILEHEAD = "#DynWarp by mario182 - File format v2";
@@ -97,6 +98,7 @@ public class Main extends JavaPlugin implements CommandExecutor{
         initCommand("createwarp", this);
         initCommand("deletewarp", this);
         initCommand("warplist", this);
+        initCommand("grouplist", this);
         load = false;
         getLogger().info("DynWarp "+VER+" enabled.");
     }
@@ -112,6 +114,7 @@ public class Main extends JavaPlugin implements CommandExecutor{
             cs.sendMessage("DynWarp "+VER+" by mario182.");
             cs.sendMessage("/warp <target> - Warps to target.");
             cs.sendMessage("/warplist [groupname] - Lists all warps/warps of a group.");
+            cs.sendMessage("/grouplist - Lists all warp groups.");
             cs.sendMessage("/createwarp <target> [permission] - Creates warp \"target\". If a permission is given, it will be required to use this warp.");
             cs.sendMessage("/deletewarp <target> - Removes warp \"target\".");
             cs.sendMessage("/warpgroup <target> <add/del> <groupname> - Adds/Removes \"target\" from \"groupname\".");
@@ -228,6 +231,20 @@ public class Main extends JavaPlugin implements CommandExecutor{
             }else{
                 cs.sendMessage("No permission. Required permission \"dynwarp.warp\".");
             }
+        }else if(label.equals("grouplist") || label.equals("listgroups")){
+            HashSet<String> hs = new HashSet<>(warps.size());
+            for (Warp w : warps){
+                hs.addAll(w.getGroups());
+            }
+            StringBuilder sb = new StringBuilder(hs.size()*24);
+            Iterator<String> i = hs.iterator();
+            while (i.hasNext()){
+                sb.append(i.next());
+                if (i.hasNext()){
+                    sb.append(", ");
+                }
+            }
+            cs.sendMessage("Available warp groups: ");
         }else if(label.equals("warpgroups") || label.equals("warpgroup") || label.equals("groupwarps")){
             if (args.length==3){
                 if (warpNameExists(args[0])){

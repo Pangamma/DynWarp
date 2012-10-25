@@ -1,6 +1,6 @@
 name: DynWarp
 main: mario182.dynwarp.Main
-version: 0.2
+version: 0.3
 author: mario182
 website: http://mario182.no-ip.org
 commands:
@@ -27,4 +27,8 @@ commands:
       description: '-'
       usage: '-'
       aliases: [listwarps]
+    grouplist:
+      description: '-'
+      usage: '-'
+      aliases: [listgroups]
 depend: [dynmap]
