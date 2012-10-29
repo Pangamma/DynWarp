@@ -1,6 +1,6 @@
 name: DynWarp
 main: mario182.dynwarp.Main
-version: 0.3
+version: 0.31
 author: mario182
 website: http://mario182.no-ip.org
 commands:

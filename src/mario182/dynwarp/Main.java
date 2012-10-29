@@ -40,7 +40,7 @@ import org.dynmap.markers.MarkerSet;
 
 public class Main extends JavaPlugin implements CommandExecutor{
 
-    public final static String VER = "0.3";
+    public final static String VER = "0.31";
     public final static char SEPERATOR = 'と';
     public final static char GROUPSEPERATOR = '共';
     public final static String FILEHEAD = "#DynWarp by mario182 - File format v2";
@@ -115,24 +115,27 @@ public class Main extends JavaPlugin implements CommandExecutor{
             cs.sendMessage("/warp <target> - Warps to target.");
             cs.sendMessage("/warplist [groupname] - Lists all warps/warps of a group.");
             cs.sendMessage("/grouplist - Lists all warp groups.");
-            cs.sendMessage("/createwarp <target> [permission] - Creates warp \"target\". If a permission is given, it will be required to use this warp.");
+            cs.sendMessage("/createwarp <target> [displayname] [permission] - Creates warp \"target\". If a permission is given, it will be required to use this warp.");
             cs.sendMessage("/deletewarp <target> - Removes warp \"target\".");
             cs.sendMessage("/warpgroup <target> <add/del> <groupname> - Adds/Removes \"target\" from \"groupname\".");
         }else if (label.equals("createwarp") || label.equals("addwarp")){
             if (cs.hasPermission("dynwarp.create")){
-                if (args.length==0 || args.length > 2){
-                    cs.sendMessage("Usage: /"+label+" <warpname> [permission]");
+                if (args.length==0 || args.length > 3){
+                    cs.sendMessage("Usage: /"+label+" <warpname> [displayname] [permission]");
                 }else{
                     if (!warpNameExists(args[0])){
                         Location l = p.getLocation();
-                        Warp newwarp = new Warp(args[0], args[0], p.getWorld().getName(), l.getBlockX(), l.getBlockY(), l.getBlockZ(), l.getYaw(), l.getPitch(), args.length>=2?args[1]:null);
+                        Warp newwarp = new Warp(args[0], args.length>=2?args[1]:args[0], p.getWorld().getName(), l.getBlockX(), l.getBlockY(), l.getBlockZ(), l.getYaw(), l.getPitch(), args.length>=3?args[2]:null);
                         if (!warps.contains(newwarp)){
                             warps.add(newwarp);
                             addLocation(newwarp);
                             d.sendBroadcastToWeb("DynWarp", "Added warp \""+args[0]+"\".");
                             cs.sendMessage("Successfully added \""+args[0]+"\"");
                             if (args.length>=2){
-                                cs.sendMessage("Warp requires permission \""+args[1]+"\"");
+                                cs.sendMessage("Warp displays on dynmap as \""+args[1]+"\"");
+                            }
+                            if (args.length>=3){
+                                cs.sendMessage("Warp requires permission \""+args[2]+"\"");
                             }
                         }else{
                             cs.sendMessage("Another warp at this location already exists.");
